@@ -198,7 +198,7 @@ GetSpanOfFirstChild(GetSpanOfFirstChild):
 
     private string MakeSpacesVisible(string str)
     {
-      return str.Replace(' ', '·').Replace('\t', '→').Replace('\n', '↵').Replace('\r', '↫');
+      return str.Replace(' ', '•').Replace('\t', '→').Replace('\n', '⤶').Replace('\r', '↻');
     }
 
 
