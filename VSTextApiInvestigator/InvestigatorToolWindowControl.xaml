@@ -15,7 +15,7 @@
             <GroupBox Header="Investigate" Width="Auto" DockPanel.Dock="Top">
                 <StackPanel Orientation="Horizontal">
                     <RadioButton x:Name="mRadioTextStructureNavigator" IsChecked="True" Foreground="{DynamicResource {x:Static vsshell:VsBrushes.WindowTextKey}}" Checked="OnInvestigateRadioButtonChecked">TextStructureNavigator</RadioButton>
-                    <RadioButton x:Name="mRadioCodeModel" Foreground="{DynamicResource {x:Static vsshell:VsBrushes.WindowTextKey}}" Checked="OnInvestigateRadioButtonChecked">CodeModel</RadioButton>
+                    <RadioButton x:Name="mRadioCodeModel" Foreground="{DynamicResource {x:Static vsshell:VsBrushes.WindowTextKey}}" Checked="OnInvestigateRadioButtonChecked" Margin="10,0,0,0">CodeModel</RadioButton>
                 </StackPanel>
             </GroupBox>
             <TextBox 
@@ -26,8 +26,9 @@
                 AcceptsReturn="True" 
                 VerticalScrollBarVisibility="Auto" 
                 HorizontalScrollBarVisibility="Auto" 
-                Text="Initial text" 
+                Text="Click into or select some text in some text view!" 
                 FontSize="16"
+                FontFamily="Consolas"
                 Background="{DynamicResource {x:Static vsshell:VsBrushes.WindowKey}}"
                 Foreground="{DynamicResource {x:Static vsshell:VsBrushes.WindowTextKey}}"
             />
