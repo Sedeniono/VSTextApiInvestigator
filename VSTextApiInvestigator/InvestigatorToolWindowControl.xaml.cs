@@ -18,6 +18,10 @@ using Microsoft.VisualStudio.VCCodeModel;
 
 namespace VSTextApiInvestigator
 {
+  //==============================================================================
+  // MyTextManagerEvents
+  //==============================================================================
+
   public class MyTextManagerEvents : IVsTextManagerEvents
   {
     public MyTextManagerEvents(InvestigatorToolWindowControl control)
@@ -46,14 +50,12 @@ namespace VSTextApiInvestigator
   }
 
 
-  /// <summary>
-  /// Interaction logic for InvestigatorToolWindowControl.
-  /// </summary>
+  //==============================================================================
+  // InvestigatorToolWindowControl
+  //==============================================================================
+
   public partial class InvestigatorToolWindowControl : UserControl
   {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="InvestigatorToolWindowControl"/> class.
-    /// </summary>
     public InvestigatorToolWindowControl()
     {
       ThreadHelper.ThrowIfNotOnUIThread();
