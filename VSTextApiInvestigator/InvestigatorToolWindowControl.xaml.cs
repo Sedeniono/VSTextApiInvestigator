@@ -15,6 +15,7 @@ using System.Diagnostics;
 using Microsoft.VisualStudio.Editor;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.VCCodeModel;
+using Microsoft.VisualStudio;
 
 namespace VSTextApiInvestigator
 {
@@ -40,6 +41,7 @@ namespace VSTextApiInvestigator
 
     public void OnUnregisterView(IVsTextView pView)
     {
+      mControl.OnTextViewRemoved(pView);
     }
 
     public void OnUserPreferencesChanged(VIEWPREFERENCES[] pViewPrefs, FRAMEPREFERENCES[] pFramePrefs, LANGPREFERENCES[] pLangPrefs, FONTCOLORPREFERENCES[] pColorPrefs)
@@ -59,29 +61,18 @@ namespace VSTextApiInvestigator
     public InvestigatorToolWindowControl()
     {
       ThreadHelper.ThrowIfNotOnUIThread();
-      this.InitializeComponent();
-
-      IVsTextManager textManager = ServiceProvider.GlobalProvider?.GetService(typeof(SVsTextManager)) as IVsTextManager;
-      if (textManager == null) {
-        return;
-      }
-      var connectionPointContainer = textManager as Microsoft.VisualStudio.OLE.Interop.IConnectionPointContainer;
-      if (connectionPointContainer == null) {
-        return;
-      }
-
-      Microsoft.VisualStudio.OLE.Interop.IConnectionPoint textManagerEvents = null;
-      var eventGuid = typeof(IVsTextManagerEvents).GUID;
-      connectionPointContainer.FindConnectionPoint(ref eventGuid, out textManagerEvents);
-      if (textManagerEvents != null) {
-        var myEventReceiver = new MyTextManagerEvents(this);
-        textManagerEvents.Advise(myEventReceiver, out uint textManagerCookie);
-      }
+      InitializeComponent();
+      OnNewTextView(GetActiveView());
+      StartListeningToNewTextViews();
     }
 
 
     public void OnNewTextView(IVsTextView pView)
     {
+      if (mSubscribedTextViews.ContainsKey(pView)) {
+        return;
+      }
+
       IVsUserData userData = pView as IVsUserData;
       if (userData == null) {
         return;
@@ -95,8 +86,37 @@ namespace VSTextApiInvestigator
       ITextSelection textSelection = textView?.Selection;
       if (textSelection != null) {
         textSelection.SelectionChanged += SelectionInTextViewChanged;
+        mSubscribedTextViews.Add(pView, null);
       }
     }
+
+
+    public void OnTextViewRemoved(IVsTextView pView)
+    {
+      mSubscribedTextViews.Remove(pView);
+    }
+
+
+    private void StartListeningToNewTextViews()
+    {
+      ThreadHelper.ThrowIfNotOnUIThread();
+      if (TextManager == null) {
+        return;
+      }
+      var connectionPointContainer = TextManager as Microsoft.VisualStudio.OLE.Interop.IConnectionPointContainer;
+      if (connectionPointContainer == null) {
+        return;
+      }
+
+      Microsoft.VisualStudio.OLE.Interop.IConnectionPoint textManagerEvents = null;
+      var eventGuid = typeof(IVsTextManagerEvents).GUID;
+      connectionPointContainer.FindConnectionPoint(ref eventGuid, out textManagerEvents);
+      if (textManagerEvents != null) {
+        var myEventReceiver = new MyTextManagerEvents(this);
+        textManagerEvents.Advise(myEventReceiver, out uint textManagerCookie);
+      }
+    }
+
 
     private void OnInvestigateRadioButtonChecked(object sender, RoutedEventArgs e)
     {
@@ -414,7 +434,16 @@ GetSpanOfFirstChild(GetSpanOfFirstChild):
       }
 
       return outer;
-      }
+    }
+
+
+    private IVsTextView GetActiveView()
+    {
+      IVsTextView vTextView = null;
+      int mustHaveFocus = 1;
+      TextManager?.GetActiveView(mustHaveFocus, null, out vTextView);
+      return vTextView;
+    }
 
 
     // https://stackoverflow.com/a/6823111/3740047
@@ -422,11 +451,7 @@ GetSpanOfFirstChild(GetSpanOfFirstChild):
     {
       // code to get access to the editor's currently selected text cribbed from
       // http://msdn.microsoft.com/en-us/library/dd884850.aspx
-      IVsTextManager txtMgr = (IVsTextManager)ServiceProvider.GlobalProvider?.GetService(typeof(SVsTextManager));
-      IVsTextView vTextView = null;
-      int mustHaveFocus = 1;
-      txtMgr?.GetActiveView(mustHaveFocus, null, out vTextView);
-      IVsUserData userData = vTextView as IVsUserData;
+      IVsUserData userData = GetActiveView() as IVsUserData;
       if (userData == null) {
         return null;
       }
@@ -459,9 +484,12 @@ GetSpanOfFirstChild(GetSpanOfFirstChild):
     }
 
 
+    private IVsTextManager TextManager => ServiceProvider.GlobalProvider?.GetService(typeof(SVsTextManager)) as IVsTextManager;
     private IComponentModel MefCompositionContainer => ServiceProvider.GlobalProvider?.GetService(typeof(SComponentModel)) as IComponentModel;
     private ITextStructureNavigatorSelectorService NavigatorService => MefCompositionContainer?.GetService<ITextStructureNavigatorSelectorService>();
     private IVsEditorAdaptersFactoryService AdapterService => MefCompositionContainer?.GetService<IVsEditorAdaptersFactoryService>();
+
+    private Dictionary<IVsTextView, object> mSubscribedTextViews = new Dictionary<IVsTextView, object>();
   }
 
 
